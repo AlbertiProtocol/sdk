@@ -1,21 +1,78 @@
 const EthCrypto = require("eth-crypto");
 
+/**
+ * Creates a new identity.
+ * @returns {Object} - The identity object containing private and public keys.
+ */
+function createIdentity() {
+  const identity = EthCrypto.createIdentity();
+  return identity;
+}
+
+/**
+ * Converts a public key to an address.
+ * @param {string} publicKey - The public key.
+ * @returns {string} - The address.
+ */
+function publicKeyToAddress(publicKey) {
+  return EthCrypto.publicKey.toAddress(publicKey);
+}
+
+/**
+ * Converts a private key to a public key.
+ * @param {string} privateKey - The private key.
+ * @returns {string} - The public key.
+ */
+function privateKeyToPublicKey(privateKey) {
+  return EthCrypto.publicKeyByPrivateKey(privateKey);
+}
+
+/**
+ * Verifies if the hash meets the required difficulty.
+ * @param {number} difficulty - The difficulty level.
+ * @param {string} hash - The hash string.
+ * @returns {boolean} - True if hash meets the difficulty, otherwise false.
+ */
 function difficultyverify(difficulty, hash) {
   return hash.startsWith("0x" + "0".repeat(difficulty));
 }
 
+/**
+ * Hashes a message using keccak256.
+ * @param {string} message - The message to hash.
+ * @returns {string} - The hashed message.
+ */
 function hashMessage(message) {
   return EthCrypto.hash.keccak256(message);
 }
 
+/**
+ * Signs a message with a given private key.
+ * @param {string} privateKey - The private key.
+ * @param {string} message - The message to sign.
+ * @returns {string} - The message signature.
+ */
 function signMessage(privateKey, message) {
   return EthCrypto.sign(privateKey, hashMessage(message));
 }
 
+/**
+ * Recovers the public key from a signature and message.
+ * @param {string} signature - The signature.
+ * @param {string} message - The message.
+ * @returns {string} - The recovered public key.
+ */
 function recoverPublicKey(signature, message) {
   return EthCrypto.recoverPublicKey(signature, hashMessage(message));
 }
 
+/**
+ * Encodes a message by encrypting it with the receiver's public key.
+ * @param {string} message - The message to encode.
+ * @param {string} senderPrivateKey - The sender's private key.
+ * @param {string} receiverPublicKey - The receiver's public key.
+ * @returns {Promise<Object>} - The encoded message object.
+ */
 async function encodeMessage(message, senderPrivateKey, receiverPublicKey) {
   try {
     const signature = signMessage(senderPrivateKey, message);
@@ -35,6 +92,12 @@ async function encodeMessage(message, senderPrivateKey, receiverPublicKey) {
   }
 }
 
+/**
+ * Decodes an encrypted message with the receiver's private key.
+ * @param {string} encryptedString - The encrypted message string.
+ * @param {string} receiverPrivateKey - The receiver's private key.
+ * @returns {Promise<Object>} - The decoded message object.
+ */
 async function decodeMessage(encryptedString, receiverPrivateKey) {
   try {
     const encryptedObject = EthCrypto.cipher.parse(encryptedString);
@@ -60,6 +123,14 @@ async function decodeMessage(encryptedString, receiverPrivateKey) {
   }
 }
 
+/**
+ * Creates a post template.
+ * @param {string} content - The content of the post.
+ * @param {string[]} [hashtags=[]] - Array of hashtags.
+ * @param {Object[]} [attachments=[]] - Array of attachments.
+ * @param {string|null} [parentID=null] - ID of the parent post, if any.
+ * @returns {Object} - The post template object.
+ */
 function postTemplate(
   content,
   hashtags = [],
@@ -74,6 +145,17 @@ function postTemplate(
   };
 }
 
+/**
+ * Creates a meta template.
+ * @param {string} name - Name of the user or entity.
+ * @param {string} about - Description about the user or entity.
+ * @param {string} image - URL of the profile image.
+ * @param {string} website - URL of the website.
+ * @param {string[]} [followed=[]] - Array of followed users or entities.
+ * @param {string[]} [hashtags=[]] - Array of followed hashtags.
+ * @param {Object[]} [bookmarks=[]] - Array of bookmarks.
+ * @returns {Object} - The meta template object.
+ */
 function metaTemplate(
   name,
   about,
@@ -94,6 +176,14 @@ function metaTemplate(
   };
 }
 
+/**
+ * Creates a commit with a specific difficulty.
+ * @param {string} privateKey - The private key to sign the commit.
+ * @param {string} data - The data to be included in the commit.
+ * @param {string} type - The type of the commit.
+ * @param {number} [difficulty=3] - The difficulty level.
+ * @returns {Object} - The commit object.
+ */
 function createCommit(privateKey, data, type, difficulty = 3) {
   try {
     const commitAt = new Date().toISOString();
@@ -120,6 +210,12 @@ function createCommit(privateKey, data, type, difficulty = 3) {
   }
 }
 
+/**
+ * Verifies a commit.
+ * @param {Object} commit - The commit object.
+ * @param {number} [difficulty=3] - The difficulty level.
+ * @returns {boolean} - True if the commit is valid, otherwise false.
+ */
 function verifyCommit(commit, difficulty = 3) {
   try {
     const hashString = `${commit.data}${commit.commitAt}${commit.nonce}`;
@@ -136,19 +232,6 @@ function verifyCommit(commit, difficulty = 3) {
     console.error("Error verifying commit:", error);
     return false;
   }
-}
-
-function createIdentity() {
-  const identity = EthCrypto.createIdentity();
-  return identity;
-}
-
-function publicKeyToAddress(publicKey) {
-  return EthCrypto.publicKey.toAddress(publicKey);
-}
-
-function privateKeyToPublicKey(privateKey) {
-  return EthCrypto.publicKeyByPrivateKey(privateKey);
 }
 
 module.exports = {
