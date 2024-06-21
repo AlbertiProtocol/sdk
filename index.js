@@ -243,28 +243,23 @@ function verifyCommit(commit, difficulty = 3) {
  * @param {Object} dataObject - The data object to verify.
  * @returns {boolean} - True if the data object is valid, otherwise false.
  */
-
 function verifyObject(dataObject) {
-  if (Object.keys(dataObject).length !== 6) {
-    return false;
+  const requiredProperties = [
+    "commitAt",
+    "data",
+    "publicKey",
+    "signature",
+    "type",
+    "nonce",
+  ];
+
+  for (const prop of requiredProperties) {
+    if (!dataObject.hasOwnProperty(prop)) {
+      return false;
+    }
   }
 
-  if (checkdatastructure(dataObject.data, dataObject.type) === false) {
-    return false;
-  }
-
-  if (
-    dataObject.hasOwnProperty("commitAt") &&
-    dataObject.hasOwnProperty("data") &&
-    dataObject.hasOwnProperty("publicKey") &&
-    dataObject.hasOwnProperty("signature") &&
-    dataObject.hasOwnProperty("type") &&
-    dataObject.hasOwnProperty("nonce")
-  ) {
-    return true;
-  } else {
-    return false;
-  }
+  return checkDataStructure(dataObject.data, dataObject.type);
 }
 
 /**
@@ -273,95 +268,47 @@ function verifyObject(dataObject) {
  * @param {string} type - post | meta | message
  * @returns {boolean} - True if the data object is valid, otherwise false.
  */
-
-function checkdatastructure(data, type) {
-  if ((type = "post")) {
-    if (
+function checkDataStructure(data, type) {
+  if (type === "post") {
+    return (
       data.hasOwnProperty("parent") &&
       data.hasOwnProperty("content") &&
       data.hasOwnProperty("hashtags") &&
-      data.hasOwnProperty("attachments")
-    ) {
-      if (data.hashtags.length > 0) {
-        data.hashtags.forEach((element) => {
-          if (typeof element !== "string") {
-            return false;
-          }
-
-          if (element.length > 32) {
-            return false;
-          }
-
-          if (!element.match(/^[a-zA-Z0-9]*$/)) {
-            return false;
-          }
-        });
-      }
-      if (data.attachments.length > 0) {
-        let allgood = false;
-        let allgoodx = false;
-
-        data.attachments.forEach((element) => {
-          if (element.hasOwnProperty("type")) {
-            allgood = true;
-          }
-
-          if (element.hasOwnProperty("cid")) {
-            allgoodx = !allgoodx;
-          }
-
-          if (element.hasOwnProperty("url")) {
-            allgoodx = !allgoodx;
-          }
-        });
-
-        if (allgood === false || allgoodx === false) {
-          return false;
-        }
-      }
-
-      return true;
-    } else {
-      return false;
-    }
+      data.hasOwnProperty("attachments") &&
+      data.hashtags.every(
+        (element) =>
+          typeof element === "string" &&
+          element.length <= 32 &&
+          /^[a-zA-Z0-9]*$/.test(element)
+      ) &&
+      data.attachments.every(
+        (element) =>
+          element.hasOwnProperty("type") &&
+          (element.hasOwnProperty("cid") || element.hasOwnProperty("url"))
+      )
+    );
   }
 
-  if ((type = "meta")) {
-    if (
+  if (type === "meta") {
+    return (
       data.hasOwnProperty("followed") &&
       data.hasOwnProperty("hashtags") &&
       data.hasOwnProperty("bookmarks") &&
       data.hasOwnProperty("name") &&
       data.hasOwnProperty("about") &&
       data.hasOwnProperty("image") &&
-      data.hasOwnProperty("website")
-    ) {
-      data.hashTags.forEach((element) => {
-        if (typeof element !== "string") {
-          return false;
-        }
-
-        if (element.length > 32) {
-          return false;
-        }
-
-        if (!element.match(/^[a-zA-Z0-9]*$/)) {
-          return false;
-        }
-      });
-
-      return true;
-    } else {
-      return false;
-    }
+      data.hasOwnProperty("website") &&
+      data.hashtags.every(
+        (element) =>
+          typeof element === "string" &&
+          element.length <= 32 &&
+          /^[a-zA-Z0-9]*$/.test(element)
+      )
+    );
   }
 
-  if ((type = "message")) {
-    if (data.hasOwnProperty("receiver") && data.hasOwnProperty("message")) {
-      return true;
-    } else {
-      return false;
-    }
+  if (type === "message") {
+    return data.hasOwnProperty("receiver") && data.hasOwnProperty("message");
   }
 
   return false;
