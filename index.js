@@ -284,6 +284,9 @@ function checkDataStructure(data, type) {
       data.attachments.every(
         (element) =>
           element.hasOwnProperty("type") &&
+          (element.type === "image" ||
+            element.type === "video" ||
+            element.type === "others") &&
           (element.hasOwnProperty("cid") || element.hasOwnProperty("url"))
       )
     );
