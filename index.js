@@ -179,8 +179,8 @@ function metaTemplate(
 /**
  * Creates a commit with a specific difficulty.
  * @param {string} privateKey - The private key to sign the commit.
- * @param {string} data - The data to be included in the commit.
- * @param {string} type - The type of the commit.
+ * @param {string} data -  MetaTemplate | PostTemplate | EncodedMessage;
+ * @param {string} type - post | meta | message
  * @param {number} [difficulty=3] - The difficulty level.
  * @returns {Object} - The commit object.
  */
@@ -217,6 +217,10 @@ function createCommit(privateKey, data, type, difficulty = 3) {
  * @returns {boolean} - True if the commit is valid, otherwise false.
  */
 function verifyCommit(commit, difficulty = 3) {
+  if (!verifyObject(commit)) {
+    return false;
+  }
+
   try {
     const hashString = `${commit.data}${commit.commitAt}${commit.nonce}`;
     const hashedData = hashMessage(hashString);
@@ -232,6 +236,135 @@ function verifyCommit(commit, difficulty = 3) {
     console.error("Error verifying commit:", error);
     return false;
   }
+}
+
+/**
+ * Verifies if the data object contains the required properties.
+ * @param {Object} dataObject - The data object to verify.
+ * @returns {boolean} - True if the data object is valid, otherwise false.
+ */
+
+function verifyObject(dataObject) {
+  if (Object.keys(dataObject).length !== 6) {
+    return false;
+  }
+
+  if (checkdatastructure(dataObject.data, dataObject.type) === false) {
+    return false;
+  }
+
+  if (
+    dataObject.hasOwnProperty("commitAt") &&
+    dataObject.hasOwnProperty("data") &&
+    dataObject.hasOwnProperty("publicKey") &&
+    dataObject.hasOwnProperty("signature") &&
+    dataObject.hasOwnProperty("type") &&
+    dataObject.hasOwnProperty("nonce")
+  ) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/**
+ * Verifies the structure of the data object.
+ * @param {Object} data - The data object to verify.
+ * @param {string} type - post | meta | message
+ * @returns {boolean} - True if the data object is valid, otherwise false.
+ */
+
+function checkdatastructure(data, type) {
+  if ((type = "post")) {
+    if (
+      data.hasOwnProperty("parent") &&
+      data.hasOwnProperty("content") &&
+      data.hasOwnProperty("hashtags") &&
+      data.hasOwnProperty("attachments")
+    ) {
+      if (data.hashtags.length > 0) {
+        data.hashtags.forEach((element) => {
+          if (typeof element !== "string") {
+            return false;
+          }
+
+          if (element.length > 32) {
+            return false;
+          }
+
+          if (!element.match(/^[a-zA-Z0-9]*$/)) {
+            return false;
+          }
+        });
+      }
+      if (data.attachments.length > 0) {
+        let allgood = false;
+        let allgoodx = false;
+
+        data.attachments.forEach((element) => {
+          if (element.hasOwnProperty("type")) {
+            allgood = true;
+          }
+
+          if (element.hasOwnProperty("cid")) {
+            allgoodx = !allgoodx;
+          }
+
+          if (element.hasOwnProperty("url")) {
+            allgoodx = !allgoodx;
+          }
+        });
+
+        if (allgood === false || allgoodx === false) {
+          return false;
+        }
+      }
+
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  if ((type = "meta")) {
+    if (
+      data.hasOwnProperty("followed") &&
+      data.hasOwnProperty("hashtags") &&
+      data.hasOwnProperty("bookmarks") &&
+      data.hasOwnProperty("name") &&
+      data.hasOwnProperty("about") &&
+      data.hasOwnProperty("image") &&
+      data.hasOwnProperty("website")
+    ) {
+      data.hashTags.forEach((element) => {
+        if (typeof element !== "string") {
+          return false;
+        }
+
+        if (element.length > 32) {
+          return false;
+        }
+
+        if (!element.match(/^[a-zA-Z0-9]*$/)) {
+          return false;
+        }
+      });
+
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  if ((type = "message")) {
+    if (data.hasOwnProperty("receiver") && data.hasOwnProperty("message")) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  return false;
 }
 
 module.exports = {
