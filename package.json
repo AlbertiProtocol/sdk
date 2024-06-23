@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/AlbertiProtocol/sdk#readme",
   "dependencies": {
+    "crypto-js": "^4.2.0",
+    "elliptic": "^6.5.5",
     "eth-crypto": "^2.6.0"
   }
 }
