@@ -1,136 +1,72 @@
-const EthCrypto = require("eth-crypto");
+const CryptoJS = require("crypto-js");
 
-/**
- * Creates a new identity.
- * @returns {Object} - The identity object containing private and public keys.
- */
-function createIdentity() {
-  const identity = EthCrypto.createIdentity();
-  return identity;
+const EC = require("elliptic").ec;
+
+// Create a new instance of the elliptic curve (P-521)
+const curve = new EC("p521");
+
+// Function to generate a new key pair
+function generateKeyPair() {
+  const keyPair = curve.genKeyPair();
+  const privateKey = keyPair.getPrivate("hex");
+  const publicKey = keyPair.getPublic("hex");
+  return { privateKey, publicKey };
 }
 
-/**
- * Converts a public key to an address.
- * @param {string} publicKey - The public key.
- * @returns {string} - The address.
- */
-function publicKeyToAddress(publicKey) {
-  return EthCrypto.publicKey.toAddress(publicKey);
-}
-
-/**
- * Converts a private key to a public key.
- * @param {string} privateKey - The private key.
- * @returns {string} - The public key.
- */
+// Function to convert private key to public key
 function privateKeyToPublicKey(privateKey) {
-  return EthCrypto.publicKeyByPrivateKey(privateKey);
+  const keyPair = curve.keyFromPrivate(privateKey, "hex");
+  return keyPair.getPublic("hex");
 }
 
-/**
- * Verifies if the hash meets the required difficulty.
- * @param {number} difficulty - The difficulty level.
- * @param {string} hash - The hash string.
- * @returns {boolean} - True if hash meets the difficulty, otherwise false.
- */
+// Function to sign a message
+function signMessage(privateKeyHex, message) {
+  const privateKey = curve.keyFromPrivate(privateKeyHex, "hex");
+  const messageBuffer = Buffer.from(message, "utf-8");
+  const signature = privateKey.sign(messageBuffer);
+  return signature.toDER("hex");
+}
+
+// Function to verify a message against a signature
+function verifySignature(publicKeyHex, message, signatureHex) {
+  const publicKey = curve.keyFromPublic(publicKeyHex, "hex");
+  const messageBuffer = Buffer.from(message, "utf-8");
+  const signature = Buffer.from(signatureHex, "hex");
+  return publicKey.verify(messageBuffer, signature);
+}
+
+// Function to verify difficulty
 function difficultyverify(difficulty, hash) {
-  return hash.startsWith("0x" + "0".repeat(difficulty));
+  return hash.startsWith("0".repeat(difficulty));
 }
 
-/**
- * Hashes a message using keccak256.
- * @param {string} message - The message to hash.
- * @returns {string} - The hashed message.
- */
+// Function to hash a message
 function hashMessage(message) {
-  return EthCrypto.hash.keccak256(message);
+  return CryptoJS.SHA256(message).toString(CryptoJS.enc.Hex);
 }
 
-/**
- * Signs a message with a given private key.
- * @param {string} privateKey - The private key.
- * @param {string} message - The message to sign.
- * @returns {string} - The message signature.
- */
-function signMessage(privateKey, message) {
-  return EthCrypto.sign(privateKey, hashMessage(message));
+// Function to encrypt a message with a public key
+function encryptMessageWithPublicKey(message, recipientPublicKey) {
+  const recipientKey = curve.keyFromPublic(recipientPublicKey, "hex");
+  const ephemeralKey = curve.genKeyPair();
+  const sharedSecret = ephemeralKey.derive(recipientKey.getPublic());
+  const sharedKey = CryptoJS.SHA256(sharedSecret.toString(16)).toString();
+  const ciphertext = CryptoJS.AES.encrypt(message, sharedKey).toString();
+  const ephemeralPublicKey = ephemeralKey.getPublic("hex");
+  return { ciphertext, ephemeralPublicKey, recipientPublicKey };
 }
 
-/**
- * Recovers the public key from a signature and message.
- * @param {string} signature - The signature.
- * @param {string} message - The message.
- * @returns {string} - The recovered public key.
- */
-function recoverPublicKey(signature, message) {
-  return EthCrypto.recoverPublicKey(signature, hashMessage(message));
+// Function to decrypt a message with a private key
+function decryptMessageWithPrivateKey(encryptedMessage, recipientPrivateKey) {
+  const { ciphertext, ephemeralPublicKey } = encryptedMessage;
+  const recipientKey = curve.keyFromPrivate(recipientPrivateKey, "hex");
+  const ephemeralKey = curve.keyFromPublic(ephemeralPublicKey, "hex");
+  const sharedSecret = recipientKey.derive(ephemeralKey.getPublic());
+  const sharedKey = CryptoJS.SHA256(sharedSecret.toString(16)).toString();
+  const bytes = CryptoJS.AES.decrypt(ciphertext, sharedKey);
+  return bytes.toString(CryptoJS.enc.Utf8);
 }
 
-/**
- * Encodes a message by encrypting it with the receiver's public key.
- * @param {string} message - The message to encode.
- * @param {string} senderPrivateKey - The sender's private key.
- * @param {string} receiverPublicKey - The receiver's public key.
- * @returns {Promise<Object>} - The encoded message object.
- */
-async function encodeMessage(message, senderPrivateKey, receiverPublicKey) {
-  try {
-    const signature = signMessage(senderPrivateKey, message);
-    const encryptedMessage = await EthCrypto.encryptWithPublicKey(
-      receiverPublicKey,
-      JSON.stringify({ message, signature })
-    );
-    const encryptedString = EthCrypto.cipher.stringify(encryptedMessage);
-
-    return {
-      receiver: receiverPublicKey,
-      message: encryptedString,
-    };
-  } catch (error) {
-    console.error("Error encoding message:", error);
-    throw new Error("Failed to encode message.");
-  }
-}
-
-/**
- * Decodes an encrypted message with the receiver's private key.
- * @param {string} encryptedString - The encrypted message string.
- * @param {string} receiverPrivateKey - The receiver's private key.
- * @returns {Promise<Object>} - The decoded message object.
- */
-async function decodeMessage(encryptedString, receiverPrivateKey) {
-  try {
-    const encryptedObject = EthCrypto.cipher.parse(encryptedString);
-    const decrypted = await EthCrypto.decryptWithPrivateKey(
-      receiverPrivateKey,
-      encryptedObject
-    );
-    const decryptedPayload = JSON.parse(decrypted);
-
-    const senderAddress = recoverPublicKey(
-      decryptedPayload.signature,
-      decryptedPayload.message
-    );
-
-    return {
-      sender: senderAddress,
-      receiver: EthCrypto.publicKeyByPrivateKey(receiverPrivateKey),
-      message: decryptedPayload.message,
-    };
-  } catch (error) {
-    console.error("Error decoding message:", error);
-    throw new Error("Failed to decode message.");
-  }
-}
-
-/**
- * Creates a post template.
- * @param {string} content - The content of the post.
- * @param {string[]} [hashtags=[]] - Array of hashtags.
- * @param {Object[]} [attachments=[]] - Array of attachments.
- * @param {string|null} [parentID=null] - ID of the parent post, if any.
- * @returns {Object} - The post template object.
- */
 function postTemplate(
   content,
   hashtags = [],
@@ -145,30 +81,17 @@ function postTemplate(
   };
 }
 
-/**
- * Creates a meta template.
- * @param {string} name - Name of the user or entity.
- * @param {string} about - Description about the user or entity.
- * @param {string} image - URL of the profile image.
- * @param {string} website - URL of the website.
- * @param {string[]} [followed=[]] - Array of followed users or entities.
- * @param {string[]} [hashtags=[]] - Array of followed hashtags.
- * @param {Object[]} [bookmarks=[]] - Array of bookmarks.
- * @returns {Object} - The meta template object.
- */
 function metaTemplate(
   name,
   about,
   image,
   website,
   followed = [],
-  hashtags = [],
-  bookmarks = []
+  hashtags = []
 ) {
   return {
     followed,
     hashtags,
-    bookmarks,
     name,
     about,
     image,
@@ -176,76 +99,50 @@ function metaTemplate(
   };
 }
 
-/**
- * Creates a commit with a specific difficulty.
- * @param {string} privateKey - The private key to sign the commit.
- * @param {string} data -  MetaTemplate | PostTemplate | EncodedMessage;
- * @param {string} type - post | meta | message
- * @param {number} [difficulty=3] - The difficulty level.
- * @returns {Object} - The commit object.
- */
 function createCommit(privateKey, data, type, difficulty = 3) {
   try {
-    const commitAt = new Date().toISOString();
     let nonce = 0;
     let messageHash;
     let hashString;
 
     do {
       nonce++;
-      hashString = `${data}${commitAt}${nonce}`;
+      hashString = `${data}${nonce}`;
       messageHash = hashMessage(hashString);
+
+      if (nonce % 10000 === 0) {
+        console.log(`Hash attempts: ${nonce}`);
+      }
     } while (
       !difficultyverify(difficulty, messageHash) ||
       messageHash === undefined
     );
 
     const signature = signMessage(privateKey, messageHash);
-    const publicKey = EthCrypto.publicKeyByPrivateKey(privateKey);
+    const publicKey = privateKeyToPublicKey(privateKey);
 
-    return { commitAt, data, publicKey, signature, type, nonce };
+    return { data, type, nonce, publicKey, signature };
   } catch (error) {
     console.error("Error creating commit:", error);
     throw new Error("Failed to create commit.");
   }
 }
 
-/**
- * Verifies a commit.
- * @param {Object} commit - The commit object.
- * @param {number} [difficulty=3] - The difficulty level.
- * @returns {boolean} - True if the commit is valid, otherwise false.
- */
 function verifyCommit(commit, difficulty = 3) {
   if (!verifyObject(commit)) {
     return false;
   }
 
-  try {
-    const hashString = `${commit.data}${commit.commitAt}${commit.nonce}`;
-    const hashedData = hashMessage(hashString);
-
-    if (!difficultyverify(difficulty, hashedData)) {
-      console.log("Commit does not meet difficulty requirements.");
-      return false;
-    }
-
-    const signer = recoverPublicKey(commit.signature, hashedData);
-    return signer === commit.publicKey;
-  } catch (error) {
-    console.error("Error verifying commit:", error);
-    return false;
-  }
+  const { data, nonce, publicKey, signature } = commit;
+  const hashString = `${data}${nonce}`;
+  const messageHash = hashMessage(hashString);
+  const isValidSignature = verifySignature(publicKey, messageHash, signature);
+  const isValidDifficulty = difficultyverify(difficulty, messageHash);
+  return isValidSignature && isValidDifficulty;
 }
 
-/**
- * Verifies if the data object contains the required properties.
- * @param {Object} dataObject - The data object to verify.
- * @returns {boolean} - True if the data object is valid, otherwise false.
- */
 function verifyObject(dataObject) {
   const requiredProperties = [
-    "commitAt",
     "data",
     "publicKey",
     "signature",
@@ -262,12 +159,6 @@ function verifyObject(dataObject) {
   return checkDataStructure(dataObject.data, dataObject.type);
 }
 
-/**
- * Verifies the structure of the data object.
- * @param {Object} data - The data object to verify.
- * @param {string} type - post | meta | message
- * @returns {boolean} - True if the data object is valid, otherwise false.
- */
 function checkDataStructure(data, type) {
   if (type === "post") {
     return (
@@ -296,7 +187,6 @@ function checkDataStructure(data, type) {
     return (
       data.hasOwnProperty("followed") &&
       data.hasOwnProperty("hashtags") &&
-      data.hasOwnProperty("bookmarks") &&
       data.hasOwnProperty("name") &&
       data.hasOwnProperty("about") &&
       data.hasOwnProperty("image") &&
@@ -318,13 +208,16 @@ function checkDataStructure(data, type) {
 }
 
 module.exports = {
-  createIdentity,
-  createCommit,
-  verifyCommit,
-  publicKeyToAddress,
+  generateKeyPair,
   privateKeyToPublicKey,
+  signMessage,
+  verifySignature,
+  difficultyverify,
+  hashMessage,
+  encryptMessageWithPublicKey,
+  decryptMessageWithPrivateKey,
   postTemplate,
   metaTemplate,
-  encodeMessage,
-  decodeMessage,
+  createCommit,
+  verifyCommit,
 };
