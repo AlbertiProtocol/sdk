@@ -71,7 +71,7 @@ function postTemplate(
   content,
   hashtags = [],
   attachments = [],
-  parentID = null
+  parentID = null,
 ) {
   return {
     parent: parentID,
@@ -87,7 +87,7 @@ function metaTemplate(
   image,
   website,
   followed = [],
-  hashtags = []
+  hashtags = [],
 ) {
   return {
     followed,
@@ -103,16 +103,10 @@ function createCommit(privateKey, data, type, difficulty = 3) {
   try {
     let nonce = 0;
     let messageHash;
-    let hashString;
 
     do {
       nonce++;
-      hashString = `${data}${nonce}`;
-      messageHash = hashMessage(hashString);
-
-      if (nonce % 10000 === 0) {
-        console.log(`Hash attempts: ${nonce}`);
-      }
+      messageHash = hashMessage(`${JSON.stringify(data)}${nonce}`);
     } while (
       !difficultyverify(difficulty, messageHash) ||
       messageHash === undefined
@@ -134,8 +128,7 @@ function verifyCommit(commit, difficulty = 3) {
   }
 
   const { data, nonce, publicKey, signature } = commit;
-  const hashString = `${data}${nonce}`;
-  const messageHash = hashMessage(hashString);
+  const messageHash = hashMessage(`${JSON.stringify(data)}${nonce}`);
   const isValidSignature = verifySignature(publicKey, messageHash, signature);
   const isValidDifficulty = difficultyverify(difficulty, messageHash);
   return isValidSignature && isValidDifficulty;
@@ -170,7 +163,7 @@ function checkDataStructure(data, type) {
         (element) =>
           typeof element === "string" &&
           element.length <= 32 &&
-          /^[a-zA-Z0-9]*$/.test(element)
+          /^[a-zA-Z0-9]*$/.test(element),
       ) &&
       data.attachments.every(
         (element) =>
@@ -178,7 +171,7 @@ function checkDataStructure(data, type) {
           (element.type === "image" ||
             element.type === "video" ||
             element.type === "others") &&
-          (element.hasOwnProperty("cid") || element.hasOwnProperty("url"))
+          (element.hasOwnProperty("cid") || element.hasOwnProperty("url")),
       )
     );
   }
@@ -195,7 +188,7 @@ function checkDataStructure(data, type) {
         (element) =>
           typeof element === "string" &&
           element.length <= 32 &&
-          /^[a-zA-Z0-9]*$/.test(element)
+          /^[a-zA-Z0-9]*$/.test(element),
       )
     );
   }
