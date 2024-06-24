@@ -1,22 +1,19 @@
 const CryptoJS = require("crypto-js");
-
 const EC = require("elliptic").ec;
-
-// Create a new instance of the elliptic curve (P-521)
 const curve = new EC("p521");
 
-// Function to generate a new key pair
+// Function to generate a new key pair with compressed public key
 function generateKeyPair() {
   const keyPair = curve.genKeyPair();
   const privateKey = keyPair.getPrivate("hex");
-  const publicKey = keyPair.getPublic("hex");
+  const publicKey = keyPair.getPublic(true, "hex"); // true for compressed
   return { privateKey, publicKey };
 }
 
 // Function to convert private key to public key
 function privateKeyToPublicKey(privateKey) {
   const keyPair = curve.keyFromPrivate(privateKey, "hex");
-  return keyPair.getPublic("hex");
+  return keyPair.getPublic(true, "hex"); // true for compressed
 }
 
 // Function to sign a message
