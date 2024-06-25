@@ -7,13 +7,7 @@ The Alberti Protocol SDK is a comprehensive toolkit for cryptographic operations
 ```
 npm install @albertiprotocol/sdk
 ```
-
-### Rules
-
-1. All media should be shared via IPFS
-2. Client must store everything on the device
-3. Pools are temporary place, for exchange of information
-
+ 
 ### Commit
 
 A commit is the standardised signed packet of data, ready to be relayed to others.
