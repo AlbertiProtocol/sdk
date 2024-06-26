@@ -147,7 +147,7 @@ console.log(`Is the commit valid? ${isValid}`);
 To ensure all functionalities are working correctly, we have a set of tests. Run these tests using the following command:
 
 ```javascript
-node tests.js
+node test.js
 ```
 
 The tests include:
