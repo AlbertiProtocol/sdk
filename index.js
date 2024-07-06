@@ -150,12 +150,14 @@ function verifyObject(dataObject) {
 }
 
 function checkDataStructure(data, type) {
+
   if (type === "post") {
     return (
       data.hasOwnProperty("parent") &&
       data.hasOwnProperty("content") &&
       data.hasOwnProperty("hashtags") &&
       data.hasOwnProperty("attachments") &&
+      data.hasOwnProperty("tags") &&
       data.hashtags.every(
         (element) =>
           typeof element === "string" &&
@@ -167,8 +169,15 @@ function checkDataStructure(data, type) {
           element.hasOwnProperty("type") &&
           (element.type === "image" ||
             element.type === "video" ||
-            element.type === "others") &&
+            element.type === "other") &&
           (element.hasOwnProperty("cid") || element.hasOwnProperty("url")),
+      ) &&
+      data.tags.every(
+        (tag) =>
+          tag.hasOwnProperty("key") &&
+          tag.hasOwnProperty("value") &&
+          typeof tag.key === "string" &&
+          typeof tag.value === "string"
       )
     );
   }
