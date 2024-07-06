@@ -1,16 +1,44 @@
 {
   "parent": null,
   "content": "This is a simple post",
-  "hashtags": ["bitcoin", "money"],
+  "hashtags": [
+    "bitcoin",
+    "money"
+  ],
   "attachments": [
-    { "type": "img", "cid": "QmSsUfeS2EXfe6QJa5G3MYoJXmLhgr7kzUMo9cVJM6wfmq" },
-    { "type": "img", "url": "http://imgbucket.com/1234.jpg" },
-    { "type": "video", "url": "http://yt.com/1234" },
+    {
+      "type": "img",
+      "cid": "QmSsUfeS2EXfe6QJa5G3MYoJXmLhgr7kzUMo9cVJM6wfmq"
+    },
+    {
+      "type": "img",
+      "url": "http://imgbucket.com/1234.jpg"
+    },
+    {
+      "type": "video",
+      "url": "http://yt.com/1234"
+    },
     {
       "type": "video",
       "cid": "QmSsUfeS2EXfe6QJa5G3MYoJXmLhgr7kzUMo9cVJM6wfmq"
     },
-    { "type": "other", "url": "http://example.com" },
-    { "type": "other", "cid": "QmSsUfeS2EXfe6QJa5G3MYoJXmLhgr7kzUMo9cVJM6wfmq" }
+    {
+      "type": "other",
+      "url": "http://example.com"
+    },
+    {
+      "type": "other",
+      "cid": "QmSsUfeS2EXfe6QJa5G3MYoJXmLhgr7kzUMo9cVJM6wfmq"
+    }
+  ],
+  "tags": [
+    {
+      "type": "expireAt",
+      "value": "435345345"
+    },
+    {
+      "type": "createdAt",
+      "value": "435345345"
+    }
   ]
 }
