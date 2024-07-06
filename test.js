@@ -74,10 +74,12 @@ const {
   const postContent = "This is a test post.";
   const postHashtags = ["test", "post"];
   const postAttachments = [{ type: "image", url: "http://example.com/image.png" }];
-  const post = postTemplate(postContent, postHashtags, postAttachments);
+  const postTags = [{ key: "expireAt", value: "435345345" }, { key: "createdAt", value: "435345345" }];
+  const post = postTemplate(postContent, postHashtags, postAttachments, postTags);
   assert(post.content === postContent, "Post content should match");
   assert.deepStrictEqual(post.hashtags, postHashtags, "Post hashtags should match");
   assert.deepStrictEqual(post.attachments, postAttachments, "Post attachments should match");
+  assert.deepStrictEqual(post.tags, postTags, "Post tags should match");
   console.log("Post template creation test passed");
 
   // Meta template creation test
@@ -106,7 +108,7 @@ const {
 
   // Create and verify commit test
   console.log("\n=== Create and Verify Commit Test ===");
-  const postData = postTemplate("Hello, world!", [], []);
+  const postData = postTemplate("Hello, world!", [], [], []);
   const commitData = createCommit(privateKey, postData, "post", 4);
   console.log("Generated commit:", commitData);
   const isValidCommit = verifyCommit(commitData, 4);
