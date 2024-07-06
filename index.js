@@ -64,13 +64,19 @@ function decryptMessageWithPrivateKey(encryptedMessage, recipientPrivateKey) {
   return bytes.toString(CryptoJS.enc.Utf8);
 }
 
-function postTemplate(content, hashtags = [], attachments = [], tags = [], parentID = null) {
+function postTemplate(
+  content,
+  hashtags = [],
+  attachments = [],
+  tags = [],
+  parent = null
+) {
   return {
     content: content,
-    parent: parentID,
+    parent: parent,
     hashtags: hashtags,
     attachments: attachments,
-    tags: tags
+    tags: tags,
   };
 }
 
@@ -80,7 +86,7 @@ function metaTemplate(
   image,
   website,
   followed = [],
-  hashtags = [],
+  hashtags = []
 ) {
   return {
     followed,
@@ -146,7 +152,6 @@ function verifyObject(dataObject) {
 }
 
 function checkDataStructure(data, type) {
-
   if (type === "post") {
     return (
       data.hasOwnProperty("parent") &&
@@ -158,7 +163,7 @@ function checkDataStructure(data, type) {
         (element) =>
           typeof element === "string" &&
           element.length <= 32 &&
-          /^[a-zA-Z0-9]*$/.test(element),
+          /^[a-zA-Z0-9]*$/.test(element)
       ) &&
       data.attachments.every(
         (element) =>
@@ -166,7 +171,7 @@ function checkDataStructure(data, type) {
           (element.type === "image" ||
             element.type === "video" ||
             element.type === "other") &&
-          (element.hasOwnProperty("cid") || element.hasOwnProperty("url")),
+          (element.hasOwnProperty("cid") || element.hasOwnProperty("url"))
       ) &&
       data.tags.every(
         (tag) =>
@@ -190,7 +195,7 @@ function checkDataStructure(data, type) {
         (element) =>
           typeof element === "string" &&
           element.length <= 32 &&
-          /^[a-zA-Z0-9]*$/.test(element),
+          /^[a-zA-Z0-9]*$/.test(element)
       )
     );
   }
