@@ -7,11 +7,11 @@
   ],
   "attachments": [
     {
-      "type": "img",
+      "type": "image",
       "cid": "QmSsUfeS2EXfe6QJa5G3MYoJXmLhgr7kzUMo9cVJM6wfmq"
     },
     {
-      "type": "img",
+      "type": "image",
       "url": "http://imgbucket.com/1234.jpg"
     },
     {
@@ -33,11 +33,11 @@
   ],
   "tags": [
     {
-      "type": "expireAt",
+      "key": "expireAt",
       "value": "435345345"
     },
     {
-      "type": "createdAt",
+      "key": "createdAt",
       "value": "435345345"
     }
   ]
