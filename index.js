@@ -64,17 +64,13 @@ function decryptMessageWithPrivateKey(encryptedMessage, recipientPrivateKey) {
   return bytes.toString(CryptoJS.enc.Utf8);
 }
 
-function postTemplate(
-  content,
-  hashtags = [],
-  attachments = [],
-  parentID = null,
-) {
+function postTemplate(content, hashtags = [], attachments = [], tags = [], parentID = null) {
   return {
     parent: parentID,
     content,
     hashtags: hashtags,
     attachments: attachments,
+    tags: tags
   };
 }
 
