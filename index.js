@@ -66,8 +66,8 @@ function decryptMessageWithPrivateKey(encryptedMessage, recipientPrivateKey) {
 
 function postTemplate(content, hashtags = [], attachments = [], tags = [], parentID = null) {
   return {
+    content: content,
     parent: parentID,
-    content,
     hashtags: hashtags,
     attachments: attachments,
     tags: tags
